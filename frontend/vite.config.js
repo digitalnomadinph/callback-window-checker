@@ -12,9 +12,11 @@ export default defineConfig({
       },
     },
   },
-  // In production build, output goes into backend/public so Express can serve it
   build: {
-    outDir: '../backend/public',
+    // On Netlify (NETLIFY=true is set automatically), output to the default dist/
+    // folder so Netlify can find and deploy it.
+    // Locally, output to ../backend/public so Express can serve the frontend too.
+    outDir: process.env.NETLIFY ? 'dist' : '../backend/public',
     emptyOutDir: true,
   },
 });
