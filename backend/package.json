@@ -1,0 +1,17 @@
+{
+  "name": "callback-window-checker-backend",
+  "version": "1.0.0",
+  "description": "Backend for the Callback Window Checker support tool",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "libphonenumber-geo-carrier": "^1.0.4",
+    "libphonenumber-js": "^1.11.4",
+    "luxon": "^3.4.4"
+  }
+}
