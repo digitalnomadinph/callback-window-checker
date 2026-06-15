@@ -1,0 +1,7 @@
+[build]
+  base    = "frontend"
+  command = "npm install && npm run build"
+  publish = "dist"
+
+# VITE_API_URL must be set in the Netlify dashboard → Site configuration → Environment variables
+# to point at your Render backend, e.g. https://callback-window-checker-api.onrender.com

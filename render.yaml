@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: callback-window-checker-api
+    runtime: node
+    region: singapore          # closest free region to Philippines
+    plan: free
+    buildCommand: cd backend && npm install
+    startCommand: node backend/server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false            # you paste the Supabase connection string here in the Render dashboard
