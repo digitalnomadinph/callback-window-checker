@@ -1,18 +1,22 @@
-const express  = require('express');
-const router   = express.Router();
+const express = require('express');
+const router = express.Router();
 const { parsePhoneNumberFromString } = require('libphonenumber-js');
 const { DateTime } = require('luxon');
-const { pool } = require('../db');
+const db = require('../db');
 
 // ── timezone resolver ─────────────────────────────────────────────────────────
+// Try libphonenumber-geo-carrier first (area-code precision for multi-TZ countries).
+// If unavailable, fall through to the country-level map below.
 let geoTimezones = null;
 try {
   const geo = require('libphonenumber-geo-carrier');
   const fn = geo.timezones ?? geo.default?.timezones;
   if (typeof fn === 'function') geoTimezones = fn;
-} catch { /* country fallback will be used */ }
+} catch {
+  // package not installed — country fallback will be used
+}
 
-// Country → IANA timezone list (fallback when geo-carrier can't resolve)
+// Country → IANA timezone list (covers 99% of support-team use-cases)
 const COUNTRY_TZ = {
   US: ['America/New_York','America/Chicago','America/Denver','America/Los_Angeles','America/Anchorage','Pacific/Honolulu'],
   CA: ['America/Toronto','America/Winnipeg','America/Edmonton','America/Vancouver','America/St_Johns'],
@@ -72,8 +76,8 @@ const COUNTRY_TZ = {
 };
 
 // ── helpers ───────────────────────────────────────────────────────────────────
-async function getSettings() {
-  const { rows } = await pool.query('SELECT key, value FROM settings');
+function getSettings() {
+  const rows = db.prepare('SELECT key, value FROM settings').all();
   const s = Object.fromEntries(rows.map(r => [r.key, r.value]));
   return {
     businessStart: s.business_start ?? '08:00',
@@ -93,6 +97,7 @@ function inBusinessHours(dt, startStr, endStr) {
   return mins >= parseHHMM(startStr) && mins < parseHHMM(endStr);
 }
 
+// Returns the next occurrence of HH:MM in the given zone (always in the future)
 function nextWindowOpen(dt, startStr) {
   const [h, m] = startStr.split(':').map(Number);
   let candidate = dt.set({ hour: h, minute: m, second: 0, millisecond: 0 });
@@ -108,6 +113,7 @@ router.post('/', async (req, res) => { try {
     return res.status(400).json({ error: 'Please provide a phone number.' });
   }
 
+  // 1. Parse
   const parsed = parsePhoneNumberFromString(number.trim());
   if (!parsed?.isValid()) {
     return res.status(422).json({
@@ -122,13 +128,13 @@ router.post('/', async (req, res) => { try {
   const country         = parsed.country;
   const formattedNumber = parsed.formatInternational();
 
-  // Resolve candidate timezones — geo-carrier first, country map fallback
+  // 2. Resolve candidate timezones (geo-carrier → country map)
   let candidateZones = [];
   if (geoTimezones) {
     try {
       const raw = await geoTimezones(parsed);
       if (Array.isArray(raw)) candidateZones = raw.filter(z => z?.includes('/'));
-    } catch { /* fall through */ }
+    } catch { /* ignore — fall through to country map */ }
   }
   if (!candidateZones.length && country && COUNTRY_TZ[country]) {
     candidateZones = COUNTRY_TZ[country];
@@ -136,44 +142,54 @@ router.post('/', async (req, res) => { try {
 
   if (!candidateZones.length) {
     return res.json({
-      formattedNumber, country,
-      candidateZones: [], selectedZone: null, localTime: null,
-      verdict: 'unknown_timezone',
+      formattedNumber,
+      country,
+      candidateZones: [],
+      selectedZone:   null,
+      localTime:      null,
+      verdict:        'unknown_timezone',
       error: `Could not determine a timezone for ${country ?? 'this number'}. Please select one manually.`,
     });
   }
 
+  // 3. Pick zone — honour the agent's override if it's in the candidate list
   const zone = (selectedZone && candidateZones.includes(selectedZone))
     ? selectedZone
     : candidateZones[0];
 
-  const settings  = await getSettings();
-  const nowInZone = DateTime.now().setZone(zone);
-  const inWindow  = inBusinessHours(nowInZone, settings.businessStart, settings.businessEnd);
+  const settings   = getSettings();
+  const nowInZone  = DateTime.now().setZone(zone);
+  const inWindow   = inBusinessHours(nowInZone, settings.businessStart, settings.businessEnd);
 
   let verdict               = 'call_now';
-  let callbackDueIso        = null;
+  let callbackDueIso        = null; // UTC-anchored ISO for storage / agent display
   let callbackDueCustomerIso = null;
   let nextWindowIso         = null;
 
   if (!inWindow) {
     verdict = 'schedule';
-    const due              = DateTime.now().plus({ hours: settings.retryHours, minutes: settings.retryMinutes });
-    callbackDueIso         = due.toISO();
-    callbackDueCustomerIso = due.setZone(zone).toISO();
-    nextWindowIso          = nextWindowOpen(nowInZone, settings.businessStart).toISO();
+
+    const callbackDue      = DateTime.now().plus({ hours: settings.retryHours, minutes: settings.retryMinutes });
+    callbackDueIso         = callbackDue.toISO();
+    callbackDueCustomerIso = callbackDue.setZone(zone).toISO();
+
+    // Always surface next 8am so agents are never told to call at 3am
+    const next    = nextWindowOpen(nowInZone, settings.businessStart);
+    nextWindowIso = next.toISO();
   }
 
   res.json({
-    formattedNumber, country, candidateZones,
-    selectedZone:       zone,
-    localTime:          nowInZone.toISO(),
-    localTimeFormatted: nowInZone.toFormat('cccc, LLL d HH:mm:ss ZZZZ'),
+    formattedNumber,
+    country,
+    candidateZones,
+    selectedZone:          zone,
+    localTime:             nowInZone.toISO(),
+    localTimeFormatted:    nowInZone.toFormat('cccc, LLL d HH:mm:ss ZZZZ'),
     verdict,
-    businessStart:      settings.businessStart,
-    businessEnd:        settings.businessEnd,
-    retryHours:         settings.retryHours,
-    retryMinutes:       settings.retryMinutes,
+    businessStart:         settings.businessStart,
+    businessEnd:           settings.businessEnd,
+    retryHours:            settings.retryHours,
+    retryMinutes:          settings.retryMinutes,
     callbackDueIso,
     callbackDueCustomerIso,
     nextWindowIso,

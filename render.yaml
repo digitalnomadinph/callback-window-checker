@@ -9,5 +9,3 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
-      - key: DATABASE_URL
-        sync: false            # you paste the Supabase connection string here in the Render dashboard

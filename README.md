@@ -96,80 +96,35 @@ callback-window-checker/
 
 ---
 
-## Deploying online (single-service, recommended)
+## Deploying online (free: Netlify + Render)
 
-### Build the frontend into the backend
+This repo ships with `netlify.toml` and `render.yaml` pre-configured for a free split deployment: Netlify hosts the React frontend, Render hosts the Express + SQLite backend.
 
-```bash
-cd frontend
-npm run build     # outputs to ../backend/public/
-```
-
-Express automatically serves `backend/public` as static files and falls through to `index.html` for client-side routing.
-
-### Render.com
+### 1. Backend → Render
 
 1. Push the repo to GitHub.
-2. New → **Web Service** → connect repo.
-3. **Root directory**: leave blank (repo root).
-4. **Build command**:
-   ```
-   cd frontend && npm install && npm run build && cd ../backend && npm install
-   ```
-5. **Start command**:
-   ```
-   node backend/server.js
-   ```
-6. **Environment variables**: none required (SQLite is local to the instance).
+2. [render.com](https://render.com) → sign up with GitHub → **New → Web Service** → pick this repo.
+3. Render reads `render.yaml` automatically (region: Singapore, plan: free). Click **Deploy**.
+4. Copy the resulting URL, e.g. `https://callback-window-checker-api.onrender.com`.
 
-> **Persistence note**: Render's free tier has an ephemeral filesystem — the SQLite file is wiped on each deploy. Use Render's paid persistent disk ($7/mo), or swap `better-sqlite3` for a PostgreSQL connection string (see Future Work below).
+### 2. Frontend → Netlify
 
-### Railway
+1. [netlify.com](https://netlify.com) → **Add new site → Import an existing project** → pick this repo.
+2. Netlify reads `netlify.toml` automatically (base: `frontend`, publish: `dist`).
+3. **Site configuration → Environment variables** → add `VITE_API_URL` = the Render URL from step 1.
+4. Trigger a deploy. Share the resulting `*.netlify.app` URL with your team.
 
-1. Connect repo → New Project → Deploy from repo.
-2. Add a service, set **Start command**: `node backend/server.js`.
-3. Add a second build step or use a `railway.toml`:
-   ```toml
-   [build]
-   builder = "NIXPACKS"
-   buildCommand = "cd frontend && npm install && npm run build && cd ../backend && npm install"
+> **Persistence note**: Render's free tier has an ephemeral filesystem — the SQLite file resets if the service redeploys or sleeps for an extended period. For a small team checking a shared queue, this is a minor inconvenience, not a blocker. If it becomes a problem, swap `backend/db.js` to use a free hosted Postgres (e.g. Supabase or Neon) via the `pg` package — this only touches `db.js` and the three route files, all of which use plain SQL.
 
-   [deploy]
-   startCommand = "node backend/server.js"
-   ```
-4. Railway provides a volume you can mount at `/app/backend/data` for SQLite persistence.
+### Alternative: single-service deploy (no Netlify)
 
-### Fly.io
+Render can serve both the API and the built frontend from one service, skipping Netlify entirely:
 
 ```bash
-cd callback-window-checker
-fly launch          # follow prompts, set app name
-fly volumes create callback_data --size 1   # 1 GB volume for SQLite
+cd frontend && npm run build   # outputs to ../backend/public/ (when NETLIFY env var isn't set)
 ```
 
-Add to `fly.toml`:
-```toml
-[mounts]
-  source = "callback_data"
-  destination = "/app/backend/data"
-```
-
-Then deploy:
-```bash
-fly deploy
-```
-
-### Separate frontend (Netlify / Vercel) + backend (Render)
-
-If you prefer a CDN-hosted frontend:
-
-1. Deploy backend to Render as above.
-2. Copy the Render URL (e.g. `https://callback-checker.onrender.com`).
-3. In `frontend/`, create a `.env` file:
-   ```
-   VITE_API_URL=https://callback-checker.onrender.com
-   ```
-4. `npm run build` → drag `frontend/dist/` to Netlify Drop, or connect the repo on Vercel.
+Then on Render, use build command `cd frontend && npm install && npm run build && cd ../backend && npm install` and start command `node backend/server.js`. Express serves `backend/public` automatically when present.
 
 ---
 
