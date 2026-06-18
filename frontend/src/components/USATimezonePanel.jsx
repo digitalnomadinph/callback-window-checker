@@ -58,7 +58,7 @@ export default function USATimezonePanel() {
   return (
     <div className="w-56 shrink-0">
       <div className="bg-white rounded-2xl shadow p-4">
-        <h2 className="text-sm font-bold text-gray-700 mb-3 uppercase tracking-wide">
+        <h2 className="text-sm font-bold text-blue-900 mb-3 uppercase tracking-wide pb-2 border-b-2 border-orange-400">
           🇺🇸 USA Timezones
         </h2>
         <div className="space-y-2">

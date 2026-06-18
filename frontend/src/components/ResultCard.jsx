@@ -124,7 +124,7 @@ export default function ResultCard({ result, onZoneChange }) {
               value={selectedZone}
               onChange={e => onZoneChange(e.target.value)}
               className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm bg-white
-                         focus:outline-none focus:ring-2 focus:ring-blue-500"
+                         focus:outline-none focus:ring-2 focus:ring-orange-500"
             >
               {candidateZones.map(z => (
                 <option key={z} value={z}>{zoneLabel(z)}</option>
@@ -134,7 +134,7 @@ export default function ResultCard({ result, onZoneChange }) {
         ) : (
           <div className="flex items-center gap-2">
             <span className="text-sm font-semibold text-gray-800">{zoneLabel(selectedZone)}</span>
-            <span className="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full font-medium">
+            <span className="text-xs bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded-full font-medium">
               📍 auto-detected
             </span>
           </div>

@@ -42,13 +42,13 @@ export default function PhoneChecker() {
             placeholder="63 2 8123 4567"
             autoFocus
             className="flex-1 border border-gray-300 rounded-xl px-4 py-3 text-base font-mono
-                       focus:outline-none focus:ring-2 focus:ring-blue-500"
+                       focus:outline-none focus:ring-2 focus:ring-orange-500"
           />
           <button
             type="submit"
             disabled={!number.trim()}
-            className="bg-blue-600 text-white px-7 py-3 rounded-xl font-semibold text-sm
-                       hover:bg-blue-700 disabled:opacity-40 transition-colors whitespace-nowrap"
+            className="bg-orange-500 text-white px-7 py-3 rounded-xl font-semibold text-sm
+                       hover:bg-orange-600 disabled:opacity-40 transition-colors whitespace-nowrap"
           >
             Check
           </button>

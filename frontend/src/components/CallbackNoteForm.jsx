@@ -70,11 +70,11 @@ export default function CallbackNoteForm({ result }) {
             onChange={e => setUrlDraft(e.target.value)}
             placeholder="https://script.google.com/macros/s/…/exec"
             className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-xs font-mono
-                       focus:outline-none focus:ring-2 focus:ring-blue-500"
+                       focus:outline-none focus:ring-2 focus:ring-orange-500"
           />
           <button
             onClick={saveUrl}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg text-xs font-semibold hover:bg-blue-700"
+            className="bg-orange-500 text-white px-4 py-2 rounded-lg text-xs font-semibold hover:bg-orange-600"
           >
             Save
           </button>
@@ -83,7 +83,7 @@ export default function CallbackNoteForm({ result }) {
           Don't have the URL yet?{' '}
           <button
             onClick={() => alert(SETUP_INSTRUCTIONS)}
-            className="text-blue-500 underline"
+            className="text-orange-500 underline"
           >
             See setup instructions
           </button>
@@ -129,7 +129,7 @@ export default function CallbackNoteForm({ result }) {
           required
           placeholder="e.g. John Smith"
           className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm
-                     focus:outline-none focus:ring-2 focus:ring-blue-500"
+                     focus:outline-none focus:ring-2 focus:ring-orange-500"
         />
       </div>
 
@@ -143,7 +143,7 @@ export default function CallbackNoteForm({ result }) {
           rows={5}
           placeholder="Describe the callback — issue details, what was discussed, follow-up needed..."
           className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm
-                     focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                     focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"
         />
       </div>
 
@@ -156,7 +156,7 @@ export default function CallbackNoteForm({ result }) {
           required
           placeholder="Your name"
           className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm
-                     focus:outline-none focus:ring-2 focus:ring-blue-500"
+                     focus:outline-none focus:ring-2 focus:ring-orange-500"
         />
         <p className="text-xs text-gray-400 mt-0.5">Saved for next time.</p>
       </div>
@@ -164,8 +164,8 @@ export default function CallbackNoteForm({ result }) {
       <button
         type="submit"
         disabled={status === 'sending'}
-        className="w-full bg-blue-600 text-white py-2.5 rounded-xl text-sm font-semibold
-                   hover:bg-blue-700 disabled:opacity-40 transition-colors"
+        className="w-full bg-orange-500 text-white py-2.5 rounded-xl text-sm font-semibold
+                   hover:bg-orange-600 disabled:opacity-40 transition-colors"
       >
         {status === 'sending' ? 'Logging…' : 'Log to Google Sheets'}
       </button>

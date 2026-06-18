@@ -5,6 +5,23 @@ import USATimezonePanel from './components/USATimezonePanel.jsx';
 const PASSWORD = 'farmoutusa';
 const SESSION_KEY = 'cwc_auth';
 
+function FarmoutLogo({ size = 'md', onDark = false }) {
+  const farmColor = onDark ? 'text-white'    : 'text-blue-900';
+  const usaColor  = onDark ? 'text-blue-300' : 'text-gray-400';
+  const s = {
+    sm: { main: 'text-xl',   sub: 'text-xs'   },
+    md: { main: 'text-2xl',  sub: 'text-sm'   },
+    lg: { main: 'text-4xl',  sub: 'text-lg'   },
+  }[size];
+  return (
+    <div className="flex items-baseline select-none leading-none">
+      <span className={`font-black tracking-tight ${farmColor} ${s.main}`}>farm</span>
+      <span className={`font-black tracking-tight text-orange-500 ${s.main}`}>out</span>
+      <span className={`font-bold ${usaColor} ${s.sub} ml-0.5`}>usa</span>
+    </div>
+  );
+}
+
 function PasswordGate({ onUnlock }) {
   const [input, setInput] = useState('');
   const [error, setError] = useState(false);
@@ -22,10 +39,12 @@ function PasswordGate({ onUnlock }) {
 
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center px-4">
-      <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-sm space-y-5">
-        <div className="text-center">
-          <h1 className="text-xl font-bold text-gray-800">Callback Window Checker</h1>
-          <p className="text-gray-400 text-xs mt-1">Farmoutusa · Powered by Masterlabs</p>
+      <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-sm border-t-4 border-orange-500">
+        <div className="text-center mb-6 space-y-1">
+          <div className="flex justify-center mb-1">
+            <FarmoutLogo size="lg" />
+          </div>
+          <h1 className="text-xl font-bold text-blue-900">Callback VM System</h1>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-3">
@@ -38,7 +57,7 @@ function PasswordGate({ onUnlock }) {
               autoFocus
               placeholder="Enter password"
               className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm
-                         focus:outline-none focus:ring-2 focus:ring-blue-500"
+                         focus:outline-none focus:ring-2 focus:ring-orange-500"
             />
             {error && (
               <p className="text-red-500 text-xs mt-1">Incorrect password. Try again.</p>
@@ -46,8 +65,8 @@ function PasswordGate({ onUnlock }) {
           </div>
           <button
             type="submit"
-            className="w-full bg-blue-600 text-white py-3 rounded-xl text-sm font-semibold
-                       hover:bg-blue-700 transition-colors"
+            className="w-full bg-orange-500 text-white py-3 rounded-xl text-sm font-semibold
+                       hover:bg-orange-600 active:bg-orange-700 transition-colors"
           >
             Unlock
           </button>
@@ -68,10 +87,10 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      <header className="bg-blue-700 text-white shadow-md">
+      <header className="bg-blue-900 text-white shadow-lg border-t-4 border-orange-500">
         <div className="max-w-5xl mx-auto px-4 py-4">
-          <h1 className="text-xl font-bold leading-tight">Callback Window Checker</h1>
-          <p className="text-blue-300 text-xs">Is it OK to call this customer right now?</p>
+          <FarmoutLogo size="md" onDark />
+          <h1 className="text-2xl font-bold text-white mt-0.5 leading-tight">Callback VM System</h1>
         </div>
       </header>
 
@@ -85,7 +104,9 @@ export default function App() {
       </main>
 
       <footer className="mt-8 py-4 text-center text-xs text-gray-400">
-        Created by <span className="font-semibold text-gray-500">Masterlabs</span> for <span className="font-semibold text-gray-500">Farmoutusa</span>
+        Created by <span className="font-semibold text-gray-500">Masterlabs</span>
+        {' '}|{' '}
+        <span className="font-semibold text-gray-500">+639479984309</span>
       </footer>
     </div>
   );
