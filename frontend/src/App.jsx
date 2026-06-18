@@ -119,6 +119,22 @@ export default function App() {
   const isMobile = device === 'mobile';
   const { canInstall, install, dismiss } = useInstallPrompt();
 
+  // Ask "are you sure?" when the user tries to close the tab/window
+  useEffect(() => {
+    if (!unlocked) return;
+    const handler = e => { e.preventDefault(); e.returnValue = ''; };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [unlocked]);
+
+  function handleLogout() {
+    if (!window.confirm('Log out? You will need to enter the password again next time.')) return;
+    sessionStorage.removeItem(SESSION_KEY);
+    sessionStorage.removeItem(DEVICE_KEY);
+    setUnlocked(false);
+    setDevice('pc');
+  }
+
   if (!unlocked) {
     return <PasswordGate onUnlock={dev => { setDevice(dev); setUnlocked(true); }} />;
   }
@@ -126,15 +142,27 @@ export default function App() {
   return (
     <div className="min-h-screen bg-gray-100">
       <header className="bg-white shadow-md border-t-4 border-orange-500">
-        <div className={`max-w-5xl mx-auto ${isMobile ? 'px-3 py-2' : 'px-4 py-3'}`}>
-          <img
-            src="/farmoutusalogo.png"
-            alt="farmout usa"
-            className={`${isMobile ? 'w-32' : 'w-44'} -my-2`}
-          />
-          <h1 className={`font-bold text-blue-900 leading-tight ${isMobile ? 'text-base mt-0' : 'text-xl'}`}>
-            Callback VM System
-          </h1>
+        <div className={`max-w-5xl mx-auto flex items-end justify-between ${isMobile ? 'px-3 py-2' : 'px-4 py-3'}`}>
+          <div>
+            <img
+              src="/farmoutusalogo.png"
+              alt="farmout usa"
+              className={`${isMobile ? 'w-32' : 'w-44'} -my-2`}
+            />
+            <h1 className={`font-bold text-blue-900 leading-tight ${isMobile ? 'text-base mt-0' : 'text-xl'}`}>
+              Callback VM System
+            </h1>
+          </div>
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-1 text-xs text-gray-400 hover:text-red-500 transition-colors pb-0.5"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5">
+              <path fillRule="evenodd" d="M3 4.25A2.25 2.25 0 0 1 5.25 2h5.5A2.25 2.25 0 0 1 13 4.25v2a.75.75 0 0 1-1.5 0v-2a.75.75 0 0 0-.75-.75h-5.5a.75.75 0 0 0-.75.75v11.5c0 .414.336.75.75.75h5.5a.75.75 0 0 0 .75-.75v-2a.75.75 0 0 1 1.5 0v2A2.25 2.25 0 0 1 10.75 18h-5.5A2.25 2.25 0 0 1 3 15.75V4.25Z" clipRule="evenodd" />
+              <path fillRule="evenodd" d="M19 10a.75.75 0 0 0-.75-.75H8.704l1.048-.943a.75.75 0 1 0-1.004-1.114l-2.5 2.25a.75.75 0 0 0 0 1.114l2.5 2.25a.75.75 0 1 0 1.004-1.114l-1.048-.943h9.546A.75.75 0 0 0 19 10Z" clipRule="evenodd" />
+            </svg>
+            Log out
+          </button>
         </div>
       </header>
 
