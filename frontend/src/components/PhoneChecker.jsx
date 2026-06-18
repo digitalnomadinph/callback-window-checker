@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { checkNumber } from '../check.js';
 import ResultCard from './ResultCard.jsx';
+import CallbackNoteForm from './CallbackNoteForm.jsx';
 
 export default function PhoneChecker() {
   const [number,       setNumber]      = useState('');
@@ -69,6 +70,10 @@ export default function PhoneChecker() {
           result={result}
           onZoneChange={zone => { setSelectedZone(zone); runCheck(zone); }}
         />
+      )}
+
+      {result?.verdict === 'call_now' && (
+        <CallbackNoteForm result={result} />
       )}
     </div>
   );
