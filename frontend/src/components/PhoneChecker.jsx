@@ -37,7 +37,7 @@ export default function PhoneChecker() {
             type="tel"
             value={number}
             onChange={e => setNumber(e.target.value)}
-            placeholder="+1 415 555 2671"
+            placeholder="63 2 8123 4567"
             autoFocus
             className="flex-1 border border-gray-300 rounded-xl px-4 py-3 text-base font-mono
                        focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -52,8 +52,8 @@ export default function PhoneChecker() {
           </button>
         </form>
         <p className="text-xs text-gray-400 mt-2">
-          Enter the full international number with country code, e.g.{' '}
-          <span className="font-mono">+63 2 8123 4567</span>
+          Start with the country code — + sign optional, e.g.{' '}
+          <span className="font-mono">63 2 8123 4567</span> or <span className="font-mono">+63 2 8123 4567</span>
         </p>
       </div>
 

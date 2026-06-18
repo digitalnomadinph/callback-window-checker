@@ -109,13 +109,22 @@ function nextWindowIso(zone) {
   return new Date(now.getTime() + until * 60_000).toISOString();
 }
 
+function normalize(raw) {
+  let n = raw.trim();
+  if (n.startsWith('00')) return '+' + n.slice(2);       // 0063... → +63...
+  if (n.startsWith('011')) return '+' + n.slice(3);      // 011 1... → +1...
+  if (!n.startsWith('+')) return '+' + n;                // 63 2 8123 → +63 2 8123
+  return n;
+}
+
 export function checkNumber(rawNumber, selectedZone = null) {
   if (!rawNumber?.trim()) throw new Error('Enter a phone number.');
 
+  const normalized = normalize(rawNumber);
   let parsed;
-  try { parsed = parsePhoneNumber(rawNumber.trim()); } catch { parsed = null; }
+  try { parsed = parsePhoneNumber(normalized); } catch { parsed = null; }
   if (!parsed?.isValid()) {
-    throw new Error('Invalid number — include the country code, e.g. +63 2 8123 4567');
+    throw new Error('Invalid number — include the country code, e.g. 63 2 8123 4567 or +63 2 8123 4567');
   }
 
   const country = parsed.country;
