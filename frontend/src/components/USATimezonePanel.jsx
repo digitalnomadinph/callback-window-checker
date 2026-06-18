@@ -48,7 +48,7 @@ function getSnapshot(zone) {
   };
 }
 
-export default function USATimezonePanel() {
+export default function USATimezonePanel({ isMobile = false }) {
   const [tick, setTick] = useState(0);
   useEffect(() => {
     const t = setInterval(() => setTick(n => n + 1), 1000);
@@ -56,12 +56,12 @@ export default function USATimezonePanel() {
   }, []);
 
   return (
-    <div className="w-56 shrink-0">
+    <div className={isMobile ? 'w-full' : 'w-56 shrink-0'}>
       <div className="bg-white rounded-2xl shadow p-4">
         <h2 className="text-sm font-bold text-blue-900 mb-3 uppercase tracking-wide pb-2 border-b-2 border-orange-400">
           🇺🇸 USA Timezones
         </h2>
-        <div className="space-y-2">
+        <div className={isMobile ? 'grid grid-cols-2 gap-2' : 'space-y-2'}>
           {US_ZONES.map(({ zone, label, city }) => {
             const { timeStr, secStr, ampm, abbr, inWindow } = getSnapshot(zone);
             return (
@@ -80,7 +80,7 @@ export default function USATimezonePanel() {
                   </span>
                 </div>
                 <div className="flex items-baseline gap-1">
-                  <span className="font-mono text-xl font-bold text-gray-900 tabular-nums">
+                  <span className={`font-mono font-bold text-gray-900 tabular-nums ${isMobile ? 'text-lg' : 'text-xl'}`}>
                     {timeStr}
                   </span>
                   <span className="font-mono text-sm text-gray-400 tabular-nums">
