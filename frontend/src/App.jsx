@@ -146,15 +146,18 @@ export default function App() {
     if (!unlocked) return;
     let refDate = Date.now();
     let refPerf = performance.now();
+    let wakeTs  = 0; // timestamp of last sleep→wake transition
 
     function resetRef() { refDate = Date.now(); refPerf = performance.now(); }
 
-    // After sleep/wake, reset baseline so we don't flag legitimate wakeups
-    function onVisibility() { if (!document.hidden) setTimeout(resetRef, 600); }
+    // On wake: reset reference immediately AND record wake time so the
+    // interval skips the grace period (avoids sleep/wake false positives)
+    function onVisibility() { if (!document.hidden) { wakeTs = Date.now(); resetRef(); } }
     document.addEventListener('visibilitychange', onVisibility);
 
     const id = setInterval(async () => {
       if (document.hidden) return;
+      if (Date.now() - wakeTs < 5000) return; // 5-second grace after wake
       const drift = Math.abs(Date.now() - (refDate + (performance.now() - refPerf)));
       if (drift > 30000 && !tamperLogged.current) {
         tamperLogged.current = true;
