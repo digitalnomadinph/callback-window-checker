@@ -355,11 +355,13 @@ export default function AttendanceTab({ isMobile }) {
           </div>
         )}
 
-        {/* Clock Out */}
-        <button onClick={handleClockOut} disabled={status === 'sending'}
-          className="w-full bg-red-600 text-white py-3 rounded-xl text-sm font-bold hover:bg-red-700 disabled:opacity-40 transition-colors">
-          {status === 'sending' ? 'Logging…' : '🔴 Clock Out for the Day'}
-        </button>
+        {/* Clock Out — hidden while break picker is open to prevent accidents */}
+        {!showBreakPicker && (
+          <button onClick={handleClockOut} disabled={status === 'sending'}
+            className="w-full bg-red-600 text-white py-3 rounded-xl text-sm font-bold hover:bg-red-700 disabled:opacity-40 transition-colors">
+            {status === 'sending' ? 'Logging…' : '🔴 Clock Out for the Day'}
+          </button>
+        )}
         {status === 'error' && <p className="text-red-500 text-xs text-center">Failed. Please try again.</p>}
       </div>
     </div>
