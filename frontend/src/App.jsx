@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import PhoneChecker from './components/PhoneChecker.jsx';
 import USATimezonePanel from './components/USATimezonePanel.jsx';
 
@@ -118,21 +118,31 @@ export default function App() {
 
   const isMobile = device === 'mobile';
   const { canInstall, install, dismiss } = useInstallPrompt();
+  const loggingOut = useRef(false);
 
   // Ask "are you sure?" when the user tries to close the tab/window
   useEffect(() => {
     if (!unlocked) return;
-    const handler = e => { e.preventDefault(); e.returnValue = ''; };
+    const handler = e => {
+      if (loggingOut.current) return;
+      e.preventDefault();
+      e.returnValue = '';
+    };
     window.addEventListener('beforeunload', handler);
     return () => window.removeEventListener('beforeunload', handler);
   }, [unlocked]);
 
-  function handleLogout() {
+  async function handleLogout() {
     if (!window.confirm('Log out? You will need to enter the password again next time.')) return;
+    loggingOut.current = true;
+    // Clear all service worker caches so the next load fetches fresh code
+    if ('caches' in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map(k => caches.delete(k)));
+    }
     sessionStorage.removeItem(SESSION_KEY);
     sessionStorage.removeItem(DEVICE_KEY);
-    setUnlocked(false);
-    setDevice('pc');
+    window.location.reload();
   }
 
   if (!unlocked) {
