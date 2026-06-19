@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwhExqtU7hEphKCNP7WWUkp5sAQMFEPsdd1lPgUO1O7cXyEFUf4ecHB2OuXNoWb8lUs/exec';
 const ATT_KEY = 'cwc_attendance';
@@ -9,6 +9,11 @@ const BREAK_TYPES = [
   { id: 'RESTROOM', emoji: '🚽', label: 'Restroom'  },
   { id: 'OTHER',    emoji: '📋', label: 'Other'     },
 ];
+
+// Break limits and warning thresholds (in ms)
+const BREAK_LIMIT   = { LUNCH: 60*60000, RESTROOM: 15*60000, OTHER: 30*60000 };
+const BREAK_WARN_AT = { LUNCH: 55*60000, RESTROOM: 13*60000, OTHER: 25*60000 };
+const BREAK_LABEL   = { LUNCH: '1 hour', RESTROOM: '15 minutes', OTHER: '30 minutes' };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -106,13 +111,40 @@ export default function AttendanceTab({ isMobile }) {
   const [pendingOther,   setPendingOther]   = useState(false);
   const [otherReason,    setOtherReason]    = useState('');
   const [lastClockOut,   setLastClockOut]   = useState(null);
-  const [,               setTick]           = useState(0);
+  const [tick,           setTick]           = useState(0);
+  const [breakAlert,     setBreakAlert]     = useState(null); // null | 'warning' | 'exceeded'
+  const breakWarnedRef    = useRef(false);
+  const breakExceededRef  = useRef(false);
 
   // 1-second tick to drive live timers
   useEffect(() => {
     const id = setInterval(() => setTick(t => t + 1), 1000);
     return () => clearInterval(id);
   }, []);
+
+  // Reset alert refs whenever a new break starts
+  useEffect(() => {
+    if (att?.phase === 'on_break') {
+      breakWarnedRef.current   = false;
+      breakExceededRef.current = false;
+      setBreakAlert(null);
+    }
+  }, [att?.breakStart]);
+
+  // Check break limits every tick
+  useEffect(() => {
+    if (!att || att.phase !== 'on_break') return;
+    const bMs   = Date.now() - att.breakStart;
+    const limit = BREAK_LIMIT[att.breakType]   ?? BREAK_LIMIT.OTHER;
+    const warn  = BREAK_WARN_AT[att.breakType] ?? BREAK_WARN_AT.OTHER;
+    if (bMs >= limit && !breakExceededRef.current) {
+      breakExceededRef.current = true;
+      setBreakAlert('exceeded');
+    } else if (bMs >= warn && !breakWarnedRef.current) {
+      breakWarnedRef.current = true;
+      setBreakAlert('warning');
+    }
+  }, [tick]);
 
   function saveAtt(data) {
     if (data) localStorage.setItem(ATT_KEY, JSON.stringify(data));
@@ -168,6 +200,9 @@ export default function AttendanceTab({ isMobile }) {
 
   async function handleResume() {
     const now = Date.now();
+    breakWarnedRef.current   = false;
+    breakExceededRef.current = false;
+    setBreakAlert(null);
     try {
       await log({ type: 'attendance', action: 'RESUME', agentName: att.agentName, timestamp: fmtNow(), breakType: att.breakType, breakDuration: fmtDuration(now - att.breakStart) });
     } catch {}
@@ -266,21 +301,68 @@ export default function AttendanceTab({ isMobile }) {
 
   // ── On Break ──────────────────────────────────────────────────────────────
   if (att.phase === 'on_break') {
-    const bLabel = BREAK_TYPES.find(b => b.id === att.breakType)?.label || att.breakType;
+    const bLabel    = BREAK_TYPES.find(b => b.id === att.breakType)?.label || att.breakType;
+    const limitMs   = BREAK_LIMIT[att.breakType]   ?? BREAK_LIMIT.OTHER;
+    const remaining = Math.max(0, limitMs - breakMs());
+    const isOver    = breakMs() > limitMs;
+    const overMs    = Math.max(0, breakMs() - limitMs);
+
     return (
       <div className={wrapCls}>
+        {/* Break limit alert */}
+        {breakAlert === 'exceeded' && (
+          <div className="bg-red-50 border-2 border-red-400 rounded-2xl p-4 space-y-2 shadow">
+            <p className="text-sm font-bold text-red-700">🚨 {bLabel} break limit reached!</p>
+            <p className="text-xs text-red-600">
+              Your {BREAK_LABEL[att.breakType] ?? '30-minute'} break is over.
+              You are <span className="font-bold">{fmtDuration(overMs)}</span> over time.
+              Please resume work now.
+            </p>
+            <button onClick={handleResume}
+              className="w-full bg-red-600 text-white py-2.5 rounded-xl text-sm font-bold hover:bg-red-700 transition-colors">
+              ▶️ Resume Work Now
+            </button>
+          </div>
+        )}
+        {breakAlert === 'warning' && (
+          <div className="bg-amber-50 border-2 border-amber-400 rounded-2xl p-4 space-y-2 shadow">
+            <p className="text-sm font-bold text-amber-700">⚠️ Break ending soon!</p>
+            <p className="text-xs text-amber-700">
+              Your {bLabel} break ends in{' '}
+              <span className="font-bold">{fmtDuration(remaining)}</span>.
+              Get ready to clock back in.
+            </p>
+            <div className="flex gap-2">
+              <button onClick={handleResume}
+                className="flex-1 bg-green-600 text-white py-2 rounded-xl text-xs font-bold hover:bg-green-700 transition-colors">
+                ▶️ Resume Now
+              </button>
+              <button onClick={() => setBreakAlert(null)}
+                className="px-3 py-2 rounded-xl text-xs text-amber-600 border border-amber-300 hover:bg-amber-100 transition-colors">
+                Dismiss
+              </button>
+            </div>
+          </div>
+        )}
+
         <div className="bg-white rounded-2xl shadow p-5 space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-bold text-gray-800">🕐 Attendance Log</h3>
-            <span className="text-xs font-semibold text-amber-600 bg-amber-50 border border-amber-200 rounded-full px-2.5 py-0.5">On Break</span>
+            <span className={`text-xs font-semibold rounded-full px-2.5 py-0.5 border ${isOver ? 'text-red-600 bg-red-50 border-red-300' : 'text-amber-600 bg-amber-50 border-amber-200'}`}>
+              {isOver ? 'Over Break' : 'On Break'}
+            </span>
           </div>
 
           <div className="text-center space-y-1">
             <p className="text-xs text-gray-500 font-medium">
               {att.breakReason ? `${bLabel} · ${att.breakReason}` : bLabel}
             </p>
-            <p className="text-4xl font-mono font-bold text-amber-500 tracking-widest">{fmtDuration(breakMs())}</p>
-            <p className="text-xs text-gray-400">break time</p>
+            <p className={`text-4xl font-mono font-bold tracking-widest ${isOver ? 'text-red-500' : 'text-amber-500'}`}>
+              {fmtDuration(breakMs())}
+            </p>
+            <p className="text-xs text-gray-400">
+              {isOver ? `${fmtDuration(overMs)} over limit` : `limit: ${BREAK_LABEL[att.breakType] ?? '30 min'}`}
+            </p>
           </div>
 
           <div className="bg-green-50 border border-green-100 rounded-xl px-4 py-2 text-center">
