@@ -98,6 +98,19 @@ async function log(payload) {
   });
 }
 
+function fetchJsonp(params) {
+  return new Promise((resolve, reject) => {
+    const cb = '__att_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+    const tid = setTimeout(() => { cleanup(); reject(new Error('Timeout')); }, 10000);
+    const script = document.createElement('script');
+    function cleanup() { clearTimeout(tid); delete window[cb]; script.remove(); }
+    window[cb] = (data) => { cleanup(); resolve(data); };
+    script.onerror = () => { cleanup(); reject(new Error('Failed')); };
+    script.src = SCRIPT_URL + '?' + new URLSearchParams({ ...params, callback: cb, _t: Date.now() });
+    document.head.appendChild(script);
+  });
+}
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function AttendanceTab({ isMobile }) {
@@ -105,6 +118,8 @@ export default function AttendanceTab({ isMobile }) {
     try { return JSON.parse(localStorage.getItem(ATT_KEY)); } catch { return null; }
   });
   const [agentName,      setAgentName]      = useState(() => att?.agentName || localStorage.getItem('cwc_agent_name') || '');
+  const [staffList,      setStaffList]      = useState([]);
+  const [staffLoading,   setStaffLoading]   = useState(true);
   const [screenshot,     setScreenshot]     = useState(null);
   const [status,         setStatus]         = useState('idle');
   const [showBreakPicker,setShowBreakPicker]= useState(false);
@@ -120,6 +135,14 @@ export default function AttendanceTab({ isMobile }) {
   useEffect(() => {
     const id = setInterval(() => setTick(t => t + 1), 1000);
     return () => clearInterval(id);
+  }, []);
+
+  // Load staff list for name dropdown
+  useEffect(() => {
+    fetchJsonp({ type: 'staff_list' })
+      .then(data => { if (data?.names?.length) setStaffList(data.names); })
+      .catch(() => {})
+      .finally(() => setStaffLoading(false));
   }, []);
 
   // Reset alert refs whenever a new break starts
@@ -269,8 +292,23 @@ export default function AttendanceTab({ isMobile }) {
 
         <div>
           <label className="block text-xs font-medium text-gray-600 mb-1">Staff Name</label>
-          <input value={agentName} onChange={e => setAgentName(e.target.value)} placeholder="Your name"
-            className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
+          {staffLoading ? (
+            <div className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-400 bg-gray-50">
+              Loading names…
+            </div>
+          ) : staffList.length > 0 ? (
+            <select
+              value={agentName}
+              onChange={e => { setAgentName(e.target.value); if (e.target.value) localStorage.setItem('cwc_agent_name', e.target.value); }}
+              className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white"
+            >
+              <option value="">— Select your name —</option>
+              {staffList.map(name => <option key={name} value={name}>{name}</option>)}
+            </select>
+          ) : (
+            <input value={agentName} onChange={e => setAgentName(e.target.value)} placeholder="Your name"
+              className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
+          )}
         </div>
 
         <div>

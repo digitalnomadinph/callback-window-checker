@@ -28,6 +28,10 @@ function doGet(e) {
       return handleAdminRequest(data);
     }
 
+    if (data.type === 'staff_list') {
+      return handleStaffList(data);
+    }
+
     // ── Callback Log ──────────────────────────────────────────────────────
     var ss    = SpreadsheetApp.openById(SHEET_ID);
     var sheet = ss.getSheetByName('Callback Log');
@@ -310,6 +314,71 @@ function updateDailySummary(ss, data) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Staff List — public read, admin-only write
+// ─────────────────────────────────────────────────────────────────────────────
+
+function handleStaffList(data) {
+  var cb = data.callback || 'callback';
+  try {
+    var ss = SpreadsheetApp.openById(SHEET_ID);
+    var names = getStaffNames(ss);
+    return ContentService
+      .createTextOutput(cb + '(' + JSON.stringify({ names: names }) + ')')
+      .setMimeType(ContentService.MimeType.JAVASCRIPT);
+  } catch (e) {
+    return ContentService
+      .createTextOutput(cb + '({"names":[]})')
+      .setMimeType(ContentService.MimeType.JAVASCRIPT);
+  }
+}
+
+function getStaffNames(ss) {
+  var sheet = ss.getSheetByName('Staff List');
+  if (!sheet || sheet.getLastRow() < 2) return [];
+  return sheet.getRange(2, 1, sheet.getLastRow() - 1, 1).getValues()
+    .map(function(r) { return String(r[0]).trim(); })
+    .filter(function(n) { return n.length > 0; })
+    .sort();
+}
+
+function addStaffMember(ss, name) {
+  if (!name || !String(name).trim()) return { error: 'Name is required' };
+  name = String(name).trim();
+  var sheet = ss.getSheetByName('Staff List');
+  if (!sheet) {
+    sheet = ss.insertSheet('Staff List');
+    sheet.appendRow(['Name']);
+    sheet.getRange(1, 1).setFontWeight('bold').setBackground('#1e3a8a').setFontColor('#ffffff');
+    sheet.setFrozenRows(1);
+  }
+  if (sheet.getLastRow() > 1) {
+    var existing = sheet.getRange(2, 1, sheet.getLastRow() - 1, 1).getValues();
+    for (var i = 0; i < existing.length; i++) {
+      if (String(existing[i][0]).trim().toLowerCase() === name.toLowerCase()) {
+        return { error: 'Name already exists' };
+      }
+    }
+  }
+  sheet.appendRow([name]);
+  return { success: true, names: getStaffNames(ss) };
+}
+
+function removeStaffMember(ss, name) {
+  if (!name) return { error: 'Name is required' };
+  name = String(name).trim();
+  var sheet = ss.getSheetByName('Staff List');
+  if (!sheet || sheet.getLastRow() < 2) return { error: 'Staff list is empty' };
+  var rows = sheet.getRange(2, 1, sheet.getLastRow() - 1, 1).getValues();
+  for (var i = rows.length - 1; i >= 0; i--) {
+    if (String(rows[i][0]).trim() === name) {
+      sheet.deleteRow(i + 2);
+      return { success: true, names: getStaffNames(ss) };
+    }
+  }
+  return { error: 'Name not found' };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Run these manually once to authorize all scopes (MailApp + DriveApp)
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -330,8 +399,11 @@ function handleAdminRequest(data) {
 
   try {
     var ss = SpreadsheetApp.openById(SHEET_ID);
-    if (data.action === 'dashboard') return jsonp(getAdminDashboard(ss));
-    if (data.action === 'range')     return jsonp(getAdminRange(ss, data.from, data.to));
+    if (data.action === 'dashboard')    return jsonp(getAdminDashboard(ss));
+    if (data.action === 'range')        return jsonp(getAdminRange(ss, data.from, data.to));
+    if (data.action === 'get_staff')    return jsonp({ names: getStaffNames(ss) });
+    if (data.action === 'add_staff')    return jsonp(addStaffMember(ss, data.name));
+    if (data.action === 'remove_staff') return jsonp(removeStaffMember(ss, data.name));
     return jsonp({ error: 'Unknown action' });
   } catch (err) {
     return jsonp({ error: err.toString() });

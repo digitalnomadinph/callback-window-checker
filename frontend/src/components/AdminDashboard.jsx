@@ -74,6 +74,13 @@ export default function AdminDashboard({ onLogout }) {
   const [rangeLoading, setRangeLoading] = useState(false);
   const [rangeError,   setRangeError]   = useState(null);
 
+  // Staff management
+  const [staffList,    setStaffList]    = useState([]);
+  const [staffLoading, setStaffLoading] = useState(true);
+  const [staffSaving,  setStaffSaving]  = useState(false);
+  const [newStaffName, setNewStaffName] = useState('');
+  const [staffError,   setStaffError]   = useState(null);
+
   const loadDash = useCallback(async () => {
     try {
       setDashError(null);
@@ -93,6 +100,45 @@ export default function AdminDashboard({ onLogout }) {
     const id = setInterval(loadDash, 60000);
     return () => clearInterval(id);
   }, [loadDash]);
+
+  useEffect(() => {
+    fetchAdmin('get_staff')
+      .then(data => { if (data?.names) setStaffList(data.names); })
+      .catch(() => {})
+      .finally(() => setStaffLoading(false));
+  }, []);
+
+  async function handleAddStaff() {
+    const name = newStaffName.trim();
+    if (!name) return;
+    setStaffSaving(true);
+    setStaffError(null);
+    try {
+      const data = await fetchAdmin('add_staff', { name });
+      if (data.error) { setStaffError(data.error); return; }
+      if (data.names) setStaffList(data.names);
+      setNewStaffName('');
+    } catch (e) {
+      setStaffError(e.message);
+    } finally {
+      setStaffSaving(false);
+    }
+  }
+
+  async function handleRemoveStaff(name) {
+    if (!window.confirm(`Remove "${name}" from the staff list?`)) return;
+    setStaffSaving(true);
+    setStaffError(null);
+    try {
+      const data = await fetchAdmin('remove_staff', { name });
+      if (data.error) { setStaffError(data.error); return; }
+      if (data.names) setStaffList(data.names);
+    } catch (e) {
+      setStaffError(e.message);
+    } finally {
+      setStaffSaving(false);
+    }
+  }
 
   async function handleRangeReport() {
     if (!fromDate || !toDate) return;
@@ -300,6 +346,53 @@ export default function AdminDashboard({ onLogout }) {
             </div>
           )}
         </Section>
+        {/* ── Staff Management ─────────────────────────────────────────────── */}
+        <Section title="👥 Manage Staff">
+          {staffLoading
+            ? <p className="text-xs text-gray-400">Loading…</p>
+            : staffList.length === 0
+              ? <p className="text-sm text-gray-400">No staff added yet. Add names below.</p>
+              : (
+                <ul className="divide-y divide-gray-50">
+                  {staffList.map(name => (
+                    <li key={name} className="flex items-center justify-between py-2.5">
+                      <span className="text-sm font-medium text-gray-800">{name}</span>
+                      <button
+                        onClick={() => handleRemoveStaff(name)}
+                        disabled={staffSaving}
+                        className="text-xs text-red-400 hover:text-red-600 hover:bg-red-50 px-2.5 py-1 rounded-lg transition-colors disabled:opacity-40"
+                      >
+                        Remove
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )
+          }
+
+          {staffError && (
+            <p className="text-xs text-red-500 bg-red-50 border border-red-200 rounded-xl px-3 py-2">{staffError}</p>
+          )}
+
+          <div className="flex gap-2 pt-2 border-t border-gray-100">
+            <input
+              type="text"
+              value={newStaffName}
+              onChange={e => { setNewStaffName(e.target.value); setStaffError(null); }}
+              onKeyDown={e => e.key === 'Enter' && handleAddStaff()}
+              placeholder="Enter full name"
+              className="flex-1 border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+            />
+            <button
+              onClick={handleAddStaff}
+              disabled={!newStaffName.trim() || staffSaving}
+              className="bg-blue-900 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-blue-800 disabled:opacity-40 transition-colors whitespace-nowrap"
+            >
+              {staffSaving ? 'Saving…' : '+ Add'}
+            </button>
+          </div>
+        </Section>
+
       </main>
 
       <footer className="mt-8 py-4 text-center text-xs text-gray-400">
