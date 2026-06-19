@@ -5,8 +5,18 @@
 var NOTIFICATION_EMAIL = 'zotacvoicemail@gmail.com';
 
 function doPost(e) {
+  return doGet(e); // forward to doGet for compatibility
+}
+
+function doGet(e) {
+  // Health check — no parameters
+  if (!e.parameter || !e.parameter.customerName) {
+    return ContentService
+      .createTextOutput('Callback VM System script is running.')
+      .setMimeType(ContentService.MimeType.TEXT);
+  }
   try {
-    var data = JSON.parse(e.postData.contents);
+    var data = e.parameter;
 
     // ── Write to sheet ────────────────────────────────────────────────────
     var ss    = SpreadsheetApp.getActiveSpreadsheet();
@@ -75,9 +85,3 @@ function testEmail() {
   Logger.log('Test email sent to ' + NOTIFICATION_EMAIL);
 }
 
-// Health-check — open the URL in a browser to confirm the script is live
-function doGet(e) {
-  return ContentService
-    .createTextOutput('Callback VM System script is running.')
-    .setMimeType(ContentService.MimeType.TEXT);
-}
