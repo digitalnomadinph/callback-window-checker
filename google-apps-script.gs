@@ -167,6 +167,24 @@ function handleAttendance(data) {
     }
   }
 
+  // Immediate alert on clock tamper
+  if (action === 'CLOCK_TAMPER') {
+    try {
+      MailApp.sendEmail(
+        NOTIFICATION_EMAIL,
+        '🚨 CLOCK TAMPER: ' + (data.agentName || 'Unknown') + ' — ' + (data.timestamp || ''),
+        'SECURITY ALERT\n\n' +
+        'Agent:     ' + (data.agentName || 'Unknown') + '\n' +
+        'Time:      ' + (data.timestamp  || '') + '\n' +
+        'Clock drift detected: ' + (data.drift || '') + '\n' +
+        'IP:        ' + (data.ip         || '') + '\n\n' +
+        'The agent\'s system clock was changed while they were logged in.\n' +
+        'Work hours are computed from server-side timestamps and are not affected.'
+      );
+    } catch (mailErr) { console.error('Tamper email error:', mailErr.toString()); }
+    return;
+  }
+
   // Notify on clock-in too
   if (action === 'CLOCK_IN') {
     try {
