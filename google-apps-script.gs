@@ -1,19 +1,5 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// Callback Window Checker — Google Apps Script
-//
-// DEPLOY INSTRUCTIONS:
-//  1. Open your Google Sheet → Extensions → Apps Script
-//  2. Delete all existing code, paste this entire file
-//  3. Click Deploy → New Deployment
-//     Type:            Web App
-//     Execute as:      Me
-//     Who has access:  Anyone
-//  4. Click Deploy → Authorize with your Google account when prompted
-//  5. Copy the Web App URL and paste it into the app
-//
-// SHEET SETUP:
-//  - The script will auto-create headers on first run.
-//  - Name your sheet tab "Callback Log" (or leave it — the script will rename it).
+// Callback VM System — Google Apps Script
 // ─────────────────────────────────────────────────────────────────────────────
 
 var NOTIFICATION_EMAIL = 'zotacvoicemail@gmail.com';
@@ -55,7 +41,6 @@ function doPost(e) {
       data.callDetails   || ''
     ]);
 
-    // Auto-resize columns for readability
     sheet.autoResizeColumns(1, 7);
 
     // ── Send email ────────────────────────────────────────────────────────
@@ -73,22 +58,34 @@ function doPost(e) {
       data.callDetails || '—'
     ].join('\n');
 
-    GmailApp.sendEmail(NOTIFICATION_EMAIL, subject, body);
+    MailApp.sendEmail(NOTIFICATION_EMAIL, subject, body);
 
     return ContentService
       .createTextOutput(JSON.stringify({ success: true }))
       .setMimeType(ContentService.MimeType.JSON);
 
   } catch (err) {
+    // Log the error so you can see it in Apps Script → Executions
+    console.error('doPost error:', err.toString());
     return ContentService
       .createTextOutput(JSON.stringify({ success: false, error: err.toString() }))
       .setMimeType(ContentService.MimeType.JSON);
   }
 }
 
-// Health-check endpoint — open in browser to confirm the script is live
+// ── Run this manually first to authorize all permissions ──────────────────
+function testEmail() {
+  MailApp.sendEmail(
+    NOTIFICATION_EMAIL,
+    'Callback VM — Test Email',
+    'If you received this, the email integration is working correctly.'
+  );
+  Logger.log('Test email sent to ' + NOTIFICATION_EMAIL);
+}
+
+// Health-check — open the URL in a browser to confirm the script is live
 function doGet(e) {
   return ContentService
-    .createTextOutput('Callback Window Checker script is running.')
+    .createTextOutput('Callback VM System script is running.')
     .setMimeType(ContentService.MimeType.TEXT);
 }
