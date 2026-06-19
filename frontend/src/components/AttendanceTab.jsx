@@ -166,7 +166,7 @@ export default function AttendanceTab({ isMobile }) {
   // ── Actions ────────────────────────────────────────────────────────────────
 
   async function handleClockIn() {
-    if (!agentName.trim()) { alert('Enter your agent name first.'); return; }
+    if (!agentName.trim()) { alert('Enter your name first.'); return; }
     setStatus('sending');
     const [info, b64] = await Promise.all([
       getClientInfo(),
@@ -268,7 +268,7 @@ export default function AttendanceTab({ isMobile }) {
         <h3 className="text-sm font-bold text-gray-800">🕐 Attendance Log</h3>
 
         <div>
-          <label className="block text-xs font-medium text-gray-600 mb-1">Agent Name</label>
+          <label className="block text-xs font-medium text-gray-600 mb-1">Staff Name</label>
           <input value={agentName} onChange={e => setAgentName(e.target.value)} placeholder="Your name"
             className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
         </div>

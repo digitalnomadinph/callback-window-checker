@@ -138,7 +138,7 @@ export default function AdminDashboard({ onLogout }) {
       <main className="max-w-4xl mx-auto px-4 py-4 space-y-4">
 
         {/* ── Live Status ─────────────────────────────────────────────────── */}
-        <Section title="🟢 Live Agent Status">
+        <Section title="🟢 Live Staff Status">
           <div className="flex items-center justify-between">
             <p className="text-xs text-gray-400">
               {refreshedAt ? `Updated ${refreshedAt.toLocaleTimeString()}` : 'Loading…'}
@@ -153,13 +153,13 @@ export default function AdminDashboard({ onLogout }) {
 
           {dash && (
             dash.agents.length === 0
-              ? <p className="text-sm text-gray-400 text-center py-4">No agents active today.</p>
+              ? <p className="text-sm text-gray-400 text-center py-4">No staff active today.</p>
               : (
                 <div className="overflow-x-auto -mx-1">
                   <table className="w-full text-sm min-w-[420px]">
                     <thead>
                       <tr className="text-xs text-gray-400 border-b border-gray-100">
-                        <th className="text-left pb-2 font-medium px-1">Agent</th>
+                        <th className="text-left pb-2 font-medium px-1">Staff</th>
                         <th className="text-left pb-2 font-medium px-1">Status</th>
                         <th className="text-left pb-2 font-medium px-1">Clocked In At</th>
                         <th className="text-left pb-2 font-medium px-1">Break Time</th>
@@ -194,7 +194,7 @@ export default function AdminDashboard({ onLogout }) {
               <table className="w-full text-sm min-w-[420px]">
                 <thead>
                   <tr className="text-xs text-gray-400 border-b border-gray-100">
-                    <th className="text-left pb-2 font-medium px-1">Agent</th>
+                    <th className="text-left pb-2 font-medium px-1">Staff</th>
                     <th className="text-left pb-2 font-medium px-1">Hours Worked</th>
                     <th className="text-left pb-2 font-medium px-1">Sessions</th>
                     <th className="text-left pb-2 font-medium px-1">First In</th>
@@ -280,7 +280,7 @@ export default function AdminDashboard({ onLogout }) {
                   {/* Total row */}
                   <div className="border-t border-gray-100 pt-3">
                     <div className="flex justify-between items-center">
-                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Total all agents</p>
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Total all staff</p>
                       <p className="text-sm font-bold text-orange-600">
                         {fmtHours(rangeData.agents.reduce((s, a) => s + a.totalHours, 0))}
                       </p>

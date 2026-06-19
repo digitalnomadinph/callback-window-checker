@@ -72,7 +72,7 @@ export default function CallbackNoteForm({ result }) {
       <div className="bg-gray-50 rounded-xl px-3 py-2 text-xs text-gray-500 space-y-1">
         <div><span className="font-medium text-gray-600">Phone:</span> <span className="font-mono">{formattedNumber}</span></div>
         <div><span className="font-medium text-gray-600">Customer time:</span> {fmtNow(selectedZone)}</div>
-        <div><span className="font-medium text-gray-600">Agent time (PH):</span> {fmtNow(agentTz)}</div>
+        <div><span className="font-medium text-gray-600">Staff time (PH):</span> {fmtNow(agentTz)}</div>
       </div>
 
       {/* Customer Name */}
@@ -102,9 +102,9 @@ export default function CallbackNoteForm({ result }) {
         />
       </div>
 
-      {/* Agent Name */}
+      {/* Staff Name */}
       <div>
-        <label className="block text-xs font-medium text-gray-600 mb-1">Agent Name *</label>
+        <label className="block text-xs font-medium text-gray-600 mb-1">Staff Name *</label>
         <input
           value={agentName}
           onChange={e => setAgentName(e.target.value)}

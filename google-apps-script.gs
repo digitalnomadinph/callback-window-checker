@@ -34,7 +34,7 @@ function doGet(e) {
     if (!sheet) { sheet = ss.getActiveSheet(); sheet.setName('Callback Log'); }
 
     if (sheet.getLastRow() === 0) {
-      sheet.appendRow(['Timestamp (PH)','Customer Name','Customer Phone','Customer Local Time','Agent','Agent Time (PH)','Call Details']);
+      sheet.appendRow(['Timestamp (PH)','Customer Name','Customer Phone','Customer Local Time','Staff','Staff Time (PH)','Call Details']);
       sheet.getRange(1,1,1,7).setFontWeight('bold');
       sheet.setFrozenRows(1);
     }
@@ -78,7 +78,7 @@ function handleAttendance(data) {
   if (!sheet) {
     sheet = ss.insertSheet('Attendance Log');
     // Column 11 (Server Epoch) is internal — used to compute authoritative duration
-    var hdrs = ['Timestamp (PH)','Agent','Action','Details','IP Address',
+    var hdrs = ['Timestamp (PH)','Staff','Action','Details','IP Address',
                 'Location','Device / OS / Browser','Screenshot',
                 'Work Duration','Hours (decimal)','Server Epoch'];
     sheet.appendRow(hdrs);
@@ -153,7 +153,7 @@ function handleAttendance(data) {
     if (serverHours !== null) data.durationHours = serverHours.toFixed(4);
     updateDailySummary(ss, data);
 
-    // Notify agent via email
+    // Notify staff via email
     try {
       var hours = parseFloat(data.durationHours) || 0;
       var h     = Math.floor(hours);
@@ -162,7 +162,7 @@ function handleAttendance(data) {
       MailApp.sendEmail(
         NOTIFICATION_EMAIL,
         'Clock-Out: ' + (data.agentName || 'Unknown') + ' — ' + humanHours + ' worked',
-        'Agent:       ' + (data.agentName  || '') + '\n' +
+        'Staff:       ' + (data.agentName  || '') + '\n' +
         'Clocked in:  ' + (data.clockInTime || '') + '\n' +
         'Clocked out: ' + (data.timestamp   || '') + '\n' +
         'Work hours:  ' + (data.totalWorked || '') + '  (' + hours.toFixed(2) + ' hrs)\n'
@@ -179,11 +179,11 @@ function handleAttendance(data) {
         NOTIFICATION_EMAIL,
         '🚨 CLOCK TAMPER: ' + (data.agentName || 'Unknown') + ' — ' + (data.timestamp || ''),
         'SECURITY ALERT\n\n' +
-        'Agent:     ' + (data.agentName || 'Unknown') + '\n' +
+        'Staff:     ' + (data.agentName || 'Unknown') + '\n' +
         'Time:      ' + (data.timestamp  || '') + '\n' +
         'Clock drift detected: ' + (data.drift || '') + '\n' +
         'IP:        ' + (data.ip         || '') + '\n\n' +
-        'The agent\'s system clock was changed while they were logged in.\n' +
+        'The staff member\'s system clock was changed while they were logged in.\n' +
         'Work hours are computed from server-side timestamps and are not affected.'
       );
     } catch (mailErr) { console.error('Tamper email error:', mailErr.toString()); }
@@ -196,7 +196,7 @@ function handleAttendance(data) {
       MailApp.sendEmail(
         NOTIFICATION_EMAIL,
         'Clock-In: ' + (data.agentName || 'Unknown') + ' at ' + (data.timestamp || ''),
-        'Agent:    ' + (data.agentName || '') + '\n' +
+        'Staff:    ' + (data.agentName || '') + '\n' +
         'Time:     ' + (data.timestamp || '') + '\n' +
         'IP:       ' + (data.ip        || '') + '\n' +
         'Location: ' + (data.location  || '') + '\n' +
@@ -262,7 +262,7 @@ function computeServerDuration(sheet, agentName, clockOutEpoch) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Daily Summary tab — one row per agent per day, accumulates hours across
+// Daily Summary tab — one row per staff member per day, accumulates hours across
 // multiple sessions (e.g. half-day then come back)
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -270,7 +270,7 @@ function updateDailySummary(ss, data) {
   var sheet = ss.getSheetByName('Daily Summary');
   if (!sheet) {
     sheet = ss.insertSheet('Daily Summary');
-    var hdrs = ['Date','Agent','Total Hours Worked','Sessions','First Clock-In','Last Clock-Out'];
+    var hdrs = ['Date','Staff','Total Hours Worked','Sessions','First Clock-In','Last Clock-Out'];
     sheet.appendRow(hdrs);
     sheet.getRange(1,1,1,hdrs.length)
       .setFontWeight('bold').setBackground('#ea580c').setFontColor('#ffffff');
@@ -297,7 +297,7 @@ function updateDailySummary(ss, data) {
     }
   }
 
-  // New row for this agent today
+  // New row for this staff member today
   sheet.appendRow([today, agent, Math.round(newHours * 10000) / 10000, 1, data.clockInTime || '', data.timestamp || '']);
   sheet.autoResizeColumns(1, 6);
 }
