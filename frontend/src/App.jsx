@@ -161,9 +161,6 @@ export default function App() {
               alt="farmout usa"
               className={`${isMobile ? 'w-32' : 'w-44'} -my-2`}
             />
-            <h1 className={`font-bold text-blue-900 leading-tight ${isMobile ? 'text-base mt-0' : 'text-xl'}`}>
-              Callback VM System
-            </h1>
           </div>
           <button
             onClick={handleLogout}
