@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import PhoneChecker from './components/PhoneChecker.jsx';
 import USATimezonePanel from './components/USATimezonePanel.jsx';
+import AttendanceTab from './components/AttendanceTab.jsx';
 
 function useInstallPrompt() {
   const [prompt,    setPrompt]    = useState(null);
@@ -119,6 +120,7 @@ export default function App() {
   const isMobile = device === 'mobile';
   const { canInstall, install, dismiss } = useInstallPrompt();
   const loggingOut = useRef(false);
+  const [activeTab, setActiveTab] = useState('checker');
 
   // Ask "are you sure?" when the user tries to close the tab/window
   useEffect(() => {
@@ -177,18 +179,42 @@ export default function App() {
       </header>
 
       <main className={`max-w-5xl mx-auto ${isMobile ? 'px-3 py-3' : 'px-4 py-3'}`}>
-        {isMobile ? (
-          <div className="space-y-3">
-            <PhoneChecker isMobile />
-            <USATimezonePanel isMobile />
-          </div>
-        ) : (
-          <div className="flex gap-4 items-start">
-            <div className="flex-1 min-w-0">
-              <PhoneChecker />
+        {/* Tab Bar */}
+        <div className="flex bg-white rounded-2xl shadow mb-3 overflow-hidden border border-gray-100">
+          {[
+            { id: 'checker',    label: '📞 Callback Checker' },
+            { id: 'attendance', label: '🕐 Attendance'       },
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex-1 py-2.5 text-sm font-semibold transition-colors ${
+                activeTab === tab.id
+                  ? 'bg-orange-500 text-white'
+                  : 'text-gray-500 hover:bg-gray-50'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {activeTab === 'checker' ? (
+          isMobile ? (
+            <div className="space-y-3">
+              <PhoneChecker isMobile />
+              <USATimezonePanel isMobile />
             </div>
-            <USATimezonePanel />
-          </div>
+          ) : (
+            <div className="flex gap-4 items-start">
+              <div className="flex-1 min-w-0">
+                <PhoneChecker />
+              </div>
+              <USATimezonePanel />
+            </div>
+          )
+        ) : (
+          <AttendanceTab isMobile={isMobile} />
         )}
       </main>
 
