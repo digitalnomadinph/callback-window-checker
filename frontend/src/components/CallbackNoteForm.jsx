@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwhExqtU7hEphKCNP7WWUkp5sAQMFEPsdd1lPgUO1O7cXyEFUf4ecHB2OuXNoWb8lUs/exec';
+
 function fmtNow(zone) {
   return new Intl.DateTimeFormat('en-US', {
     timeZone: zone,
@@ -11,22 +13,12 @@ function fmtNow(zone) {
 export default function CallbackNoteForm({ result }) {
   const { formattedNumber, selectedZone } = result;
 
-  const [scriptUrl,    setScriptUrl]    = useState(() => localStorage.getItem('cwc_script_url') || '');
-  const [urlDraft,     setUrlDraft]     = useState('');
   const [customerName, setCustomerName] = useState('');
   const [callDetails,  setCallDetails]  = useState('');
   const [agentName,    setAgentName]    = useState(() => localStorage.getItem('cwc_agent_name') || '');
   const [status,       setStatus]       = useState('idle'); // idle | sending | done | error
 
   const agentTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-
-  function saveUrl() {
-    const u = urlDraft.trim();
-    if (!u.startsWith('https://script.google.com')) return alert('Paste a valid Google Apps Script URL.');
-    localStorage.setItem('cwc_script_url', u);
-    setScriptUrl(u);
-    setUrlDraft('');
-  }
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -40,7 +32,7 @@ export default function CallbackNoteForm({ result }) {
       callDetails: callDetails.trim(),
     };
     try {
-      await fetch(scriptUrl, {
+      await fetch(SCRIPT_URL, {
         method: 'POST',
         mode: 'no-cors',
         body: JSON.stringify(payload),
@@ -52,44 +44,6 @@ export default function CallbackNoteForm({ result }) {
     } catch {
       setStatus('error');
     }
-  }
-
-  // ── Setup: no URL saved yet ───────────────────────────────────────────────
-  if (!scriptUrl) {
-    return (
-      <div className="bg-white rounded-2xl shadow border border-dashed border-gray-300 p-4 space-y-3">
-        <div>
-          <p className="text-sm font-semibold text-gray-700 mb-0.5">📋 Log callbacks to Google Sheets</p>
-          <p className="text-xs text-gray-500">
-            Paste your Google Apps Script Web App URL once and it's saved in this browser.
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <input
-            value={urlDraft}
-            onChange={e => setUrlDraft(e.target.value)}
-            placeholder="https://script.google.com/macros/s/…/exec"
-            className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-xs font-mono
-                       focus:outline-none focus:ring-2 focus:ring-orange-500"
-          />
-          <button
-            onClick={saveUrl}
-            className="bg-orange-500 text-white px-4 py-2 rounded-lg text-xs font-semibold hover:bg-orange-600"
-          >
-            Save
-          </button>
-        </div>
-        <p className="text-xs text-gray-400">
-          Don't have the URL yet?{' '}
-          <button
-            onClick={() => alert(SETUP_INSTRUCTIONS)}
-            className="text-orange-500 underline"
-          >
-            See setup instructions
-          </button>
-        </p>
-      </div>
-    );
   }
 
   // ── Success ───────────────────────────────────────────────────────────────
@@ -172,34 +126,9 @@ export default function CallbackNoteForm({ result }) {
 
       {status === 'error' && (
         <p className="text-red-600 text-xs text-center">
-          Failed to submit. Check your Script URL is correct and the app is deployed.
+          Failed to submit. Check that the Apps Script is deployed and accessible.
         </p>
       )}
-
-      <p className="text-xs text-gray-400 text-center">
-        <button type="button" onClick={() => { localStorage.removeItem('cwc_script_url'); setScriptUrl(''); }}
-          className="underline">
-          Change Script URL
-        </button>
-      </p>
     </form>
   );
 }
-
-const SETUP_INSTRUCTIONS = `SETUP: Log Callbacks to Google Sheets
-
-1. Go to sheets.google.com → create a new sheet, name it "Callback Log"
-
-2. Inside that sheet: Extensions → Apps Script
-
-3. Delete any existing code and paste the script from the README or ask your developer.
-
-4. Click Deploy → New Deployment
-   - Type: Web App
-   - Execute as: Me
-   - Who has access: Anyone
-   → Click Deploy → Authorize with your Google account
-
-5. Copy the Web App URL (looks like https://script.google.com/macros/s/.../exec)
-
-6. Paste it in the box in this app and click Save.`;
